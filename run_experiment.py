@@ -146,14 +146,13 @@ def train_with_tracking(
             ]).to(input_ids.device)
             
             # Forward pass
-            # For recursive training, base model must stay in eval mode
+            # For recursive training, base model must stay in eval mode (MoE gate requirement)
+            # But we need gradients, so use enable_grad context
             if isinstance(model, ChunkRefineWrapper) and model.config.recursive_enabled:
-                # Ensure base model stays in eval mode during forward
-                was_base_training = model.base.training
+                # Base model in eval mode (required by MoE), but enable gradients
                 model.base.eval()
-                outputs = model(input_ids=input_ids)
-                if was_base_training:
-                    model.base.train()  # Restore if it was training (shouldn't be)
+                with torch.enable_grad():  # Enable gradients even though base is in eval
+                    outputs = model(input_ids=input_ids)
             elif is_baseline:
                 with torch.no_grad():
                     outputs = model(input_ids=input_ids)

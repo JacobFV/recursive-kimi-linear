@@ -1,1 +1,2 @@
 2025-11-03T08:41:04.305219: Training failed: 
+2025-11-03T08:42:28.270987: Training failed: element 0 of tensors does not require grad and does not have a grad_fn
