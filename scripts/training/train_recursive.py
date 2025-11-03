@@ -192,13 +192,13 @@ def main():
                        help="Learning rate for sidecar")
     parser.add_argument("--warmup_steps", type=int, default=2000,
                        help="Warmup steps")
-    parser.add_argument("--output_dir", type=str, default="./checkpoints",
+    parser.add_argument("--output_dir", type=str, default="./results/checkpoints",
                        help="Output directory for checkpoints")
     parser.add_argument("--phase", type=str, default="a", choices=["a", "b", "c"],
                        help="Training phase")
     parser.add_argument("--trust_remote_code", action="store_true",
                        help="Trust remote code (required for Kimi-Linear)")
-    parser.add_argument("--log_dir", type=str, default="./logs",
+    parser.add_argument("--log_dir", type=str, default="./results/logs",
                        help="Directory for TensorBoard logs")
     parser.add_argument("--eval_interval", type=int, default=1000,
                        help="Evaluation interval (steps)")

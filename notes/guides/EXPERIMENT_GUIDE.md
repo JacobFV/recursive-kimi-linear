@@ -6,7 +6,7 @@ This guide explains how to run experiments with proper scientific rigor, logging
 
 ```bash
 # Run a baseline experiment (Phase A)
-python run_experiment.py \
+python scripts/training/run_experiment.py \
     --experiment-name "baseline_phase_a_001" \
     --description "Baseline Phase A training with default config" \
     --model-path ./models/kimi-linear-48b \
@@ -98,7 +98,7 @@ All metrics are automatically:
 ### Phase A: Sidecar Only
 
 ```bash
-python run_experiment.py \
+python scripts/training/run_experiment.py \
     --experiment-name "phase_a_sidecar_only" \
     --description "Training sidecar components only (refine cells + boundary)" \
     --model-path ./models/kimi-linear-48b \
@@ -131,7 +131,7 @@ python run_experiment.py \
 
 ```bash
 # After experiment completes
-python scripts/upload_to_hf.py \
+python scripts/utils/upload_to_hf.py \
     --experiment-dir ./experiments/experiment_name \
     --hf-repo username/model-name \
     --hf-token YOUR_TOKEN
@@ -140,7 +140,7 @@ python scripts/upload_to_hf.py \
 Or set `HF_TOKEN` environment variable:
 ```bash
 export HF_TOKEN=your_token_here
-python scripts/upload_to_hf.py \
+python scripts/utils/upload_to_hf.py \
     --experiment-dir ./experiments/experiment_name \
     --hf-repo username/model-name
 ```
@@ -197,13 +197,13 @@ Monitor:
 Always run baseline first:
 ```bash
 # Baseline (no recursion)
-python run_experiment.py \
+python scripts/training/run_experiment.py \
     --experiment-name "baseline_001" \
     --recursive-config configs/baseline.json \
     ...
 
 # Then compare with recursive
-python run_experiment.py \
+python scripts/training/run_experiment.py \
     --experiment-name "recursive_phase_a_001" \
     --recursive-config configs/recursive_phase_a.json \
     ...

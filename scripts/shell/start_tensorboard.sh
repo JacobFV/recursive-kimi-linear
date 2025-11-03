@@ -2,7 +2,7 @@
 # Start TensorBoard on Lambda instance
 # Run this on the Lambda instance (192.222.58.183)
 
-LOG_DIR=${1:-"./logs"}
+LOG_DIR=${1:-"./results/logs"}
 PORT=${2:-"6006"}
 
 echo "============================================================"

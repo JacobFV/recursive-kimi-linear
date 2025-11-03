@@ -30,9 +30,10 @@ def check_and_install(package, import_name=None):
 
 def setup_directories():
     """Create necessary directories."""
-    dirs = ["logs", "checkpoints", "eval_results"]
+    dirs = ["results/logs", "results/checkpoints", "results/eval"]
     
-    base = Path(__file__).parent
+    # Get repo root (two levels up from scripts/setup/)
+    base = Path(__file__).parent.parent.parent
     for dir_name in dirs:
         dir_path = base / dir_name
         dir_path.mkdir(parents=True, exist_ok=True)
@@ -58,7 +59,8 @@ def main():
     print("\nVerifying TensorBoard...")
     try:
         from torch.utils.tensorboard import SummaryWriter
-        test_dir = Path("./logs/test")
+        repo_root = Path(__file__).parent.parent.parent
+        test_dir = repo_root / "results" / "logs" / "test"
         test_dir.mkdir(parents=True, exist_ok=True)
         writer = SummaryWriter(log_dir=str(test_dir))
         writer.add_scalar("test/scalar", 1.0, 0)
@@ -74,9 +76,9 @@ def main():
     print("=" * 60)
     print()
     print("Next steps:")
-    print("1. Start TensorBoard: tensorboard --logdir=./logs")
-    print("2. Run evaluations: python evaluate_model.py")
-    print("3. Check logs in: ./logs/")
+    print("1. Start TensorBoard: tensorboard --logdir=./results/logs")
+    print("2. Run evaluations: python scripts/evaluation/evaluate_model.py")
+    print("3. Check logs in: ./results/logs/")
 
 if __name__ == "__main__":
     main()

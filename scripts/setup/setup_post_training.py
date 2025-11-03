@@ -29,8 +29,9 @@ def clone_repo(url, target_dir, branch="main"):
 def setup_post_training_data():
     """Set up Post-Training-Data-Flywheel data generation components."""
     
-    base_dir = Path(__file__).parent
-    data_dir = base_dir / "post_training_data"
+    # Get repo root (two levels up from scripts/setup/)
+    base_dir = Path(__file__).parent.parent.parent
+    data_dir = base_dir / "data"
     
     if not data_dir.exists():
         print("Setting up Post-Training-Data-Flywheel...")
@@ -80,7 +81,9 @@ def install_dependencies():
 
 def create_data_loader():
     """Create a data loader script that integrates with our training."""
-    loader_path = Path(__file__).parent / "kimi_linear" / "recursive" / "post_training_data.py"
+    # Get repo root (two levels up from scripts/setup/)
+    repo_root = Path(__file__).parent.parent.parent
+    loader_path = repo_root / "kimi_linear" / "recursive" / "post_training_data.py"
     
     if loader_path.exists():
         print(f"✓ {loader_path} already exists")

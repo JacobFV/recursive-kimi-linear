@@ -8,8 +8,9 @@ import sys
 import json
 from typing import Optional
 
-# Add current directory to path
-sys.path.insert(0, str(Path(__file__).parent))
+# Add repo root to path (three levels up from scripts/evaluation/)
+repo_root = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(repo_root))
 
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from kimi_linear.recursive.metrics import MetricsTracker, evaluate_model, ReasoningEvaluator
@@ -200,7 +201,7 @@ def main():
                        help="Use recursive wrapper (legacy, use --recursive-config instead)")
     parser.add_argument("--recursive-config", type=str, default=None,
                        help="Path to RecursiveConfig JSON file")
-    parser.add_argument("--output_dir", type=str, default="./eval_results",
+    parser.add_argument("--output_dir", type=str, default="./results/eval",
                        help="Output directory for results")
     parser.add_argument("--skip_perplexity", action="store_true",
                        help="Skip perplexity evaluation")

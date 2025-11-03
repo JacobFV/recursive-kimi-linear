@@ -86,7 +86,7 @@ def main():
     parser = argparse.ArgumentParser(description="Compare evaluation results across stages")
     parser.add_argument("stages", nargs="+",
                        help="Stages to compare (baseline, after_surgery, etc.)")
-    parser.add_argument("--eval_dir", type=str, default="./eval_results",
+    parser.add_argument("--eval_dir", type=str, default="./results/eval",
                        help="Directory containing evaluation results")
     
     args = parser.parse_args()

@@ -96,7 +96,7 @@ output = wrapper.generate_chunks(
 
 ```bash
 # Phase A: Train sidecar only (refine cells + boundary head)
-python train_recursive.py \
+python scripts/training/train_recursive.py \
     --model_name moonshotai/Kimi-Linear-48B-A3B-Instruct \
     --chunk_width 128 \
     --max_inner_steps 4 \
