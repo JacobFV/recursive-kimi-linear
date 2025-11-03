@@ -111,14 +111,24 @@ curl -X POST "https://cloud.lambdalabs.com/api/v1/instance-operations/launch" \
 
 ## Step 4: Configure SSH
 
-After instance is created, add to your SSH config (`C:\Users\Jacob\.ssh\config`):
+**Instance Created**: IP 192.222.58.183
+
+SSH config has been added to `C:\Users\Jacob\.ssh\config`:
 
 ```
 Host lambda-gh200
-    HostName <IP_ADDRESS_FROM_LAMBDA>
+    HostName 192.222.58.183
     User ubuntu
-    IdentityFile ~/.ssh/lambda_key  # Or path to your SSH key
+    IdentityFile C:\Users\Jacob\.ssh\google_compute_engine
 ```
+
+**SSH Command**: `ssh lambda-gh200`
+
+**Instance Details**:
+- GPU: NVIDIA GH200 480GB (97GB memory available)
+- CUDA: 12.8
+- Architecture: ARM64 (aarch64)
+- OS: Ubuntu 22.04
 
 ## Important Notes
 
@@ -136,9 +146,19 @@ Host lambda-gh200
 
 ## Next Steps
 
-After SSH'ing into the Lambda instance:
+**Repository already cloned on the instance at**: `/home/ubuntu/recursive-kimi-linear`
 
-1. Clone this repository
-2. Follow [SETUP_GCP.md](./SETUP_GCP.md) (same setup process)
-3. The instance will have GPU drivers pre-installed
+Follow [SETUP_LAMBDA.md](./SETUP_LAMBDA.md) for complete setup instructions:
+
+1. ✅ Repository cloned
+2. Set up Python environment
+3. Download Hugging Face weights
+4. Convert weights to custom implementation
+5. Verify GPU access and test KDA layer
+
+**Important Notes**:
+
+- **Architecture**: ARM64 (aarch64) - verify PyTorch compatibility
+- **GPU Memory**: 97GB available - sufficient for the 48B model
+- **Cost**: GH200 instances are expensive - terminate when not in use!
 
