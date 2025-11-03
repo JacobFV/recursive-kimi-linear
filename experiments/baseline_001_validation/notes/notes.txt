@@ -1,0 +1,49 @@
+2025-11-03T08:28:42.884666: Starting experiment: baseline_001_validation
+2025-11-03T08:28:42.885104: Phase: a
+2025-11-03T08:28:42.885302: Config: configs/baseline.json
+2025-11-03T08:28:42.885654: Steps: 100, Batch: 4, LR: 0.0003
+2025-11-03T08:29:21.046325: Model loaded: ./models/kimi-linear-48b
+2025-11-03T08:29:31.946790: Starting experiment: baseline_001_validation
+2025-11-03T08:29:31.947081: Phase: a
+2025-11-03T08:29:31.947286: Config: configs/baseline.json
+2025-11-03T08:29:31.947483: Steps: 100, Batch: 4, LR: 0.0003
+2025-11-03T08:30:09.662963: Model loaded: ./models/kimi-linear-48b
+2025-11-03T08:30:33.051167: Starting experiment: baseline_001_validation
+2025-11-03T08:30:33.051473: Phase: a
+2025-11-03T08:30:33.051711: Config: configs/baseline.json
+2025-11-03T08:30:33.051899: Steps: 100, Batch: 4, LR: 0.0003
+2025-11-03T08:31:10.583379: Model loaded: ./models/kimi-linear-48b
+2025-11-03T08:31:24.749887: Starting experiment: baseline_001_validation
+2025-11-03T08:31:24.750197: Phase: a
+2025-11-03T08:31:24.750401: Config: configs/baseline.json
+2025-11-03T08:31:24.750664: Steps: 50, Batch: 2, LR: 0.0003
+2025-11-03T08:32:02.070626: Model loaded: ./models/kimi-linear-48b
+2025-11-03T08:32:02.074854: Training loop started
+2025-11-03T08:32:02.135174: No recursive components - baseline evaluation mode
+2025-11-03T08:32:02.135461: This run will only log forward pass metrics, no training
+2025-11-03T08:32:02.166361: Training started
+2025-11-03T08:32:42.223835: Starting experiment: baseline_001_validation
+2025-11-03T08:32:42.224124: Phase: a
+2025-11-03T08:32:42.224332: Config: configs/baseline.json
+2025-11-03T08:32:42.224585: Steps: 50, Batch: 2, LR: 0.0003
+2025-11-03T08:33:19.593190: Model loaded: ./models/kimi-linear-48b
+2025-11-03T08:33:19.598444: Training loop started
+2025-11-03T08:33:19.720053: No recursive components - baseline evaluation mode
+2025-11-03T08:33:19.720395: This run will only log forward pass metrics, no training
+2025-11-03T08:33:19.754935: Training started
+[Step 0] 2025-11-03T08:33:44.712215: New best loss: 12.6875 at step 0
+[Step 10] 2025-11-03T08:34:00.496193: New best loss: 12.4375 at step 10
+[Step 25] 2025-11-03T08:34:22.871779: Running evaluation at step 25
+[Step 25] 2025-11-03T08:34:57.114204: Saved checkpoint: experiments/baseline_001_validation/checkpoints/step_000025
+2025-11-03T08:35:25.537040: Starting experiment: baseline_001_validation
+2025-11-03T08:35:25.537341: Phase: a
+2025-11-03T08:35:25.537547: Config: configs/baseline.json
+2025-11-03T08:35:25.537785: Steps: 50, Batch: 2, LR: 0.0003
+2025-11-03T08:36:02.772626: Model loaded: ./models/kimi-linear-48b
+2025-11-03T08:36:02.776628: Training loop started
+2025-11-03T08:36:02.898737: No recursive components - baseline evaluation mode
+2025-11-03T08:36:02.899055: This run will only log forward pass metrics, no training
+2025-11-03T08:36:02.931981: Training started
+[Step 0] 2025-11-03T08:36:27.592734: New best loss: 12.6875 at step 0
+[Step 10] 2025-11-03T08:36:41.841708: New best loss: 12.4375 at step 10
+[Step 25] 2025-11-03T08:37:02.286865: Running evaluation at step 25

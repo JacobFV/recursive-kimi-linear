@@ -5,6 +5,51 @@ from typing import List, Dict, Optional, Tuple
 from torch.nn.utils.rnn import pad_sequence
 
 
+def create_dummy_data(num_samples: int = 1000, seq_len: int = 128, vocab_size: int = 32000) -> List[torch.Tensor]:
+    """
+    Create dummy data for testing.
+    
+    Args:
+        num_samples: Number of sequences
+        seq_len: Length of each sequence
+        vocab_size: Vocabulary size
+        
+    Returns:
+        List of token ID tensors
+    """
+    return [torch.randint(1, vocab_size, (seq_len,)) for _ in range(num_samples)]
+
+
+class ChunkDataset(torch.utils.data.Dataset):
+    """Simple dataset that yields sequences for chunked training."""
+    
+    def __init__(
+        self,
+        sequences: List[torch.Tensor],
+        chunk_width: int = 128,
+    ):
+        """
+        Args:
+            sequences: List of token ID sequences
+            chunk_width: Target chunk width
+        """
+        self.sequences = sequences
+        self.chunk_width = chunk_width
+    
+    def __len__(self):
+        return len(self.sequences)
+    
+    def __getitem__(self, idx):
+        seq = self.sequences[idx]
+        # Truncate or pad to chunk width
+        if len(seq) > self.chunk_width:
+            seq = seq[:self.chunk_width]
+        elif len(seq) < self.chunk_width:
+            padding = torch.full((self.chunk_width - len(seq),), 0, dtype=seq.dtype)
+            seq = torch.cat([seq, padding])
+        return seq
+
+
 class ChunkCollator:
     """
     Collates sequences into fixed-width chunks with right-padding.

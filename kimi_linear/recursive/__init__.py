@@ -21,7 +21,8 @@ from .losses import (
     compute_stability_loss,
     compute_total_loss,
 )
-from .data import ChunkCollator, create_corruption_mask
+from .data import ChunkCollator, create_corruption_mask, create_dummy_data, ChunkDataset
+from .experiment import ExperimentTracker, ExperimentMetadata
 
 __all__ = [
     "RefineCell",
@@ -43,5 +44,9 @@ __all__ = [
     "compute_total_loss",
     "ChunkCollator",
     "create_corruption_mask",
+    "create_dummy_data",
+    "ChunkDataset",
+    "ExperimentTracker",
+    "ExperimentMetadata",
 ]
 
