@@ -28,7 +28,11 @@
     "2025-11-03T08:36:02.931981: Training started",
     "[Step 0] 2025-11-03T08:36:27.592734: New best loss: 12.6875 at step 0",
     "[Step 10] 2025-11-03T08:36:41.841708: New best loss: 12.4375 at step 10",
-    "[Step 25] 2025-11-03T08:37:02.286865: Running evaluation at step 25"
+    "[Step 25] 2025-11-03T08:37:02.286865: Running evaluation at step 25",
+    "[Step 25] 2025-11-03T08:37:59.254334: Saved checkpoint: experiments/baseline_001_validation/checkpoints/step_000025",
+    "2025-11-03T08:38:31.920797: Training completed at step 50",
+    "2025-11-03T08:39:05.835556: Final checkpoint saved: experiments/baseline_001_validation/checkpoints/step_000050",
+    "2025-11-03T08:39:05.861697: Experiment completed successfully"
   ],
   "issues": []
 }

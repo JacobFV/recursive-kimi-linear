@@ -93,6 +93,11 @@ def train_with_tracking(
     
     # Only set up training for recursive components if they exist
     if isinstance(model, ChunkRefineWrapper) and model.config.recursive_enabled:
+        # CRITICAL: Base model must be in eval mode (Kimi MoE gate requirement)
+        # But wrapper can be in train mode for recursive components
+        model.base.eval()
+        model.train()  # This sets wrapper to train, but base stays eval
+        
         # Freeze base model (Phase A only)
         for param in model.base.parameters():
             param.requires_grad = False
@@ -106,6 +111,7 @@ def train_with_tracking(
             for param in model.latent_token.parameters():
                 param.requires_grad = True
         tracker.add_note("Training recursive components (refine_cells, boundary, latent_token)")
+        tracker.add_note("Base model frozen and in eval mode (MoE gate requirement)")
     else:
         # For baseline (no recursion), we're just evaluating forward pass
         model.eval()  # Kimi model requires eval mode (MoE gate constraint)
@@ -139,8 +145,16 @@ def train_with_tracking(
                 for _ in range(batch_size)
             ]).to(input_ids.device)
             
-            # Forward pass (use torch.no_grad for baseline to avoid training mode issues)
-            if is_baseline:
+            # Forward pass
+            # For recursive training, base model must stay in eval mode
+            if isinstance(model, ChunkRefineWrapper) and model.config.recursive_enabled:
+                # Ensure base model stays in eval mode during forward
+                was_base_training = model.base.training
+                model.base.eval()
+                outputs = model(input_ids=input_ids)
+                if was_base_training:
+                    model.base.train()  # Restore if it was training (shouldn't be)
+            elif is_baseline:
                 with torch.no_grad():
                     outputs = model(input_ids=input_ids)
             else:
