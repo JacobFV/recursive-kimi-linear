@@ -2,7 +2,7 @@
 
 import torch
 import torch.nn as nn
-from typing import Optional, Dict, Any, Tuple
+from typing import Optional, Dict, Any, Tuple, List
 from .refine_cell import RefineCell
 from .boundary_head import BoundaryHead
 from .latent_token import LatentToken

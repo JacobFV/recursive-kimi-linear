@@ -1,0 +1,84 @@
+================================================================================
+TENSORBOARD ACCESS FOR LAMBDA INSTANCE (192.222.58.183)
+================================================================================
+
+QUICK START:
+------------
+
+1. On Lambda instance (SSH into it):
+   cd recursive-kimi-linear
+   ./start_tensorboard.sh
+
+2. On your LOCAL machine, set up SSH port forwarding:
+   ssh -L 6006:localhost:6006 ubuntu@192.222.58.183 -N
+
+3. Open in your browser:
+   http://localhost:6006
+
+================================================================================
+
+DETAILED INSTRUCTIONS:
+---------------------
+
+STEP 1: Start TensorBoard on Lambda
+-----------------------------------
+SSH into Lambda:
+  ssh ubuntu@192.222.58.183
+
+Run TensorBoard (use tmux to keep it running):
+  tmux new -s tensorboard
+  cd recursive-kimi-linear
+  ./start_tensorboard.sh
+  # Press Ctrl+B then D to detach
+
+Or run directly:
+  cd recursive-kimi-linear
+  tensorboard --logdir=./logs --port=6006 --host=0.0.0.0 &
+
+STEP 2: Set up SSH Port Forwarding (on YOUR local machine)
+----------------------------------------------------------
+Windows (PowerShell):
+  ssh -L 6006:localhost:6006 ubuntu@192.222.58.183 -N
+
+Linux/Mac:
+  ssh -L 6006:localhost:6006 ubuntu@192.222.58.183 -N &
+
+Keep this terminal open while you want to access TensorBoard.
+
+STEP 3: Access TensorBoard
+--------------------------
+Open in your browser:
+  http://localhost:6006
+
+================================================================================
+
+VERIFY IT'S WORKING:
+--------------------
+
+On Lambda instance, check TensorBoard is running:
+  pgrep -f tensorboard
+
+Check port is listening:
+  ss -tlnp | grep 6006
+
+On your local machine, check SSH forwarding:
+  netstat -an | grep 6006  # Should show LISTEN on localhost:6006
+
+================================================================================
+
+TROUBLESHOOTING:
+----------------
+
+Port already in use:
+  fuser -k 6006/tcp  # Kill process using port 6006
+
+Can't connect:
+  - Make sure TensorBoard is running on Lambda
+  - Make sure SSH port forwarding is active
+  - Try different port: --port=6007
+
+Need to keep TensorBoard running:
+  Use tmux: tmux new -s tensorboard
+
+================================================================================
+

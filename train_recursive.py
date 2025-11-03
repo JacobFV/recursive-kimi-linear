@@ -15,6 +15,7 @@ from kimi_linear.recursive import (
     create_corruption_mask,
     compute_total_loss,
 )
+from kimi_linear.recursive.metrics import MetricsTracker, evaluate_model
 
 
 class ChunkDataset(Dataset):
@@ -156,6 +157,12 @@ def train_phase_a(
                 scheduler.step()
             optimizer.zero_grad()
             
+            # Log to metrics tracker
+            metrics_tracker.update_step(step)
+            metrics_tracker.log_losses(loss_dict, step, prefix="train")
+            if "total" not in loss_dict:
+                metrics_tracker.log_scalar("train/loss/total", loss.item(), step)
+            
             if step % log_interval == 0:
                 accelerator.print(
                     f"Step {step}: Loss={loss.item():.4f}, "
@@ -164,6 +171,8 @@ def train_phase_a(
                 )
             
             step += 1
+        
+        metrics_tracker.close()
 
 
 def main():
@@ -189,11 +198,21 @@ def main():
                        help="Training phase")
     parser.add_argument("--trust_remote_code", action="store_true",
                        help="Trust remote code (required for Kimi-Linear)")
+    parser.add_argument("--log_dir", type=str, default="./logs",
+                       help="Directory for TensorBoard logs")
+    parser.add_argument("--eval_interval", type=int, default=1000,
+                       help="Evaluation interval (steps)")
+    parser.add_argument("--save_interval", type=int, default=5000,
+                       help="Checkpoint save interval (steps)")
     
     args = parser.parse_args()
     
     # Initialize accelerator
     accelerator = Accelerator()
+    
+    # Initialize metrics tracker
+    log_dir = Path(args.log_dir) / f"phase_{args.phase}"
+    metrics_tracker = MetricsTracker(log_dir=str(log_dir), use_tensorboard=True)
     
     # Load tokenizer
     tokenizer = AutoTokenizer.from_pretrained(args.model_name, trust_remote_code=True)

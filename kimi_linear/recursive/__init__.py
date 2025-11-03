@@ -10,6 +10,7 @@ from .losses import (
     compute_halt_loss,
     compute_ponder_loss,
     compute_stability_loss,
+    compute_total_loss,
 )
 from .data import ChunkCollator, create_corruption_mask
 
@@ -23,6 +24,7 @@ __all__ = [
     "compute_halt_loss",
     "compute_ponder_loss",
     "compute_stability_loss",
+    "compute_total_loss",
     "ChunkCollator",
     "create_corruption_mask",
 ]
