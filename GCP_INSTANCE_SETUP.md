@@ -1,57 +1,41 @@
 # GCP Instance Setup - Manual Instructions
 
-Since GPU availability varies by zone, follow these instructions to create your GCP instance manually.
-
 ## Step 1: Create GCP Instance
 
-Run this command (adjust zone and GPU type as needed based on availability):
+Run this command to create a CPU-only instance (4 vCPUs, 16GB RAM):
 
 ```bash
-gcloud compute instances create kimi-linear-gpu \
+gcloud compute instances create kimi-linear-cpu \
     --zone=us-central1-a \
-    --machine-type=n1-standard-4 \
-    --accelerator="type=nvidia-tesla-t4,count=1" \
-    --maintenance-policy=TERMINATE \
+    --machine-type=e2-standard-4 \
     --image-family=ubuntu-2204-lts \
     --image-project=ubuntu-os-cloud \
     --boot-disk-size=200GB \
     --boot-disk-type=pd-standard \
-    --metadata="install-nvidia-driver=True" \
     --scopes=https://www.googleapis.com/auth/cloud-platform
 ```
 
-### Alternative GPU Options
+**Machine Type Options:**
+- `e2-standard-4`: 4 vCPUs, 16GB RAM (cost-effective)
+- `n2-standard-4`: 4 vCPUs, 16GB RAM (better performance)
+- `n1-standard-4`: 4 vCPUs, 15GB RAM (legacy, still works)
 
-If T4 is unavailable, try:
-- **L4**: Requires `g2-standard-4` machine type
-  ```bash
-  --machine-type=g2-standard-4 --accelerator="type=nvidia-l4,count=1"
-  ```
-- **P4**: Same machine type as T4
-  ```bash
-  --accelerator="type=nvidia-tesla-p4,count=1"
-  ```
-- **A100** (more expensive): Requires `a2-highgpu-1g` machine type
-  ```bash
-  --machine-type=a2-highgpu-1g --accelerator="type=nvidia-tesla-a100,count=1"
-  ```
+### Alternative Zones
 
-### Check GPU Availability
+If the zone is unavailable, try:
+- `us-central1-b`
+- `us-central1-c`
+- `us-west1-a`
+- `us-east1-b`
 
-```bash
-# List available GPU types in a zone
-gcloud compute accelerator-types list --filter="zone:us-central1-a"
-
-# Check quota
-gcloud compute project-info describe --project=YOUR_PROJECT_ID
-```
+Simply change the `--zone` parameter in the command above.
 
 ## Step 2: Get Instance IP
 
 After creation, get the external IP:
 
 ```bash
-gcloud compute instances describe kimi-linear-gpu --zone=YOUR_ZONE --format="get(networkInterfaces[0].accessConfigs[0].natIP)"
+gcloud compute instances describe kimi-linear-cpu --zone=YOUR_ZONE --format="get(networkInterfaces[0].accessConfigs[0].natIP)"
 ```
 
 Or list all instances:
@@ -89,7 +73,7 @@ ssh kimi-gcp
 
 Or use gcloud directly:
 ```bash
-gcloud compute ssh kimi-linear-gpu --zone=YOUR_ZONE
+gcloud compute ssh kimi-linear-cpu --zone=YOUR_ZONE
 ```
 
 ## Step 5: Follow Setup Instructions
@@ -105,14 +89,9 @@ Once connected, follow the instructions in [SETUP_GCP.md](./SETUP_GCP.md) to:
 ### Zone Resource Exhaustion
 If you get "ZONE_RESOURCE_POOL_EXHAUSTED":
 - Try different zones (us-central1-b, us-west1-a, etc.)
-- Try different GPU types (L4, P4)
+- Try different machine types (n2-standard-4, n1-standard-4)
 - Wait and retry later
 - Check quota limits
-
-### No GPU Available
-- Verify GPU quota: `gcloud compute project-info describe`
-- Request quota increase if needed
-- Try preemptible instances (cheaper but can be terminated)
 
 ### SSH Connection Issues
 - Ensure firewall rules allow SSH (port 22)

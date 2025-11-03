@@ -20,19 +20,21 @@ cd recursive-kimi-linear
 ## Step 2: Set Up Python Environment
 
 ```bash
-# Install Python 3.13 (if not already installed)
+# Install Python 3.10+ (if not already installed)
 sudo apt update
-sudo apt install -y python3.13 python3.13-venv python3-pip
+sudo apt install -y python3 python3-venv python3-pip
 
 # Create virtual environment
-python3.13 -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate
 
 # Install dependencies
 pip install --upgrade pip
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+pip install torch torchvision torchaudio  # CPU version (no CUDA needed)
 pip install flash-linear-attention transformers huggingface-hub einops
 ```
+
+**Note**: Since this is a CPU-only instance, we're installing CPU versions of PyTorch. This is fine for model loading, weight conversion, and testing. For actual training/inference with GPU, you'll need a GPU instance.
 
 ## Step 3: Download Hugging Face Weights
 

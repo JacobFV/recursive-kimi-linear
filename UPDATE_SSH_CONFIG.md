@@ -5,7 +5,7 @@ After creating your GCP instance manually, follow these steps to update your SSH
 ## Step 1: Get Instance IP
 
 ```bash
-gcloud compute instances describe kimi-linear-gpu --zone=YOUR_ZONE --format="get(networkInterfaces[0].accessConfigs[0].natIP)"
+gcloud compute instances describe kimi-linear-cpu --zone=YOUR_ZONE --format="get(networkInterfaces[0].accessConfigs[0].natIP)"
 ```
 
 Or simply:
@@ -47,7 +47,7 @@ ssh kimi-linear-gpu.us-central1-a.jacobfv123-main-project
 Or add an alias in your SSH config:
 ```
 Host kimi-gcp
-    HostName kimi-linear-gpu.us-central1-a.jacobfv123-main-project
+    HostName kimi-linear-cpu.us-central1-a.jacobfv123-main-project
     User YOUR_USERNAME
     IdentityFile C:\Users\Jacob\.ssh\google_compute_engine
 ```
