@@ -1,0 +1,15 @@
+# Core dependencies
+torch>=2.5.0
+transformers>=4.45.0
+einops>=0.8.0
+
+# Flash Linear Attention (includes KDA implementation)
+flash-linear-attention>=0.4.0
+
+# For model downloads
+huggingface-hub>=0.20.0
+
+# Optional but recommended
+accelerate>=0.30.0
+ninja>=1.11.0
+
