@@ -88,6 +88,17 @@ Kimi Linear achieves:
 - **Long sequences (1M tokens)**: 6.3× faster TPOT compared to MLA
 - **KV Cache**: Up to 75% reduction
 
+## Quick Setup
+
+### On GCP
+
+1. **Create GCP Instance**: See [GCP_INSTANCE_SETUP.md](./GCP_INSTANCE_SETUP.md) for manual instance creation instructions (GPU availability varies by zone)
+2. **SSH into instance**: `ssh kimi-gcp` (after updating SSH config per instructions)
+3. **Follow Setup Guide**: See [SETUP_GCP.md](./SETUP_GCP.md) for complete setup instructions including:
+   - Cloning this repository
+   - Downloading Hugging Face weights
+   - Converting weights to custom implementation
+
 ## Resources
 
 ### Papers
