@@ -1,161 +1,207 @@
-# Recursive Kimi-Linear
+# Recursive Kimi-Linear: Chunked Generation with Latent Refinement
 
-This repository contains comprehensive documentation and implementation of the **Kimi Delta Attention (KDA)** algorithm from the Kimi Linear architecture.
+This repository implements **recursive chunked generation** on top of [Kimi-Linear-48B-A3B-Instruct](https://huggingface.co/moonshotai/Kimi-Linear-48B-A3B-Instruct), adding TRM-style latent recursion to enable iterative refinement before committing tokens.
 
 ## Overview
 
-**Kimi Linear** is a hybrid linear attention architecture that outperforms traditional full attention methods. It features:
+**Recursive Kimi-Linear** extends the Kimi-Linear architecture with a chunked, recursive refinement mechanism:
 
-- **Kimi Delta Attention (KDA)**: A refined linear attention mechanism with fine-grained gating
-- **Hybrid Architecture**: 3:1 ratio of KDA to MLA layers
-- **High Efficiency**: Up to 75% KV cache reduction, 6× faster decoding at 1M tokens
-- **Superior Performance**: Outperforms full attention on various benchmarks
+1. **Chunked Generation**: Text is generated in fixed-width chunks (e.g., 64-128 tokens)
+2. **Inner Refinement Loop**: Within each chunk, K recursive refinement steps edit latent representations before committing tokens
+3. **Dynamic Boundaries**: A learned boundary head predicts when to commit and the effective chunk length
+4. **Full-Depth Recursion**: All transformer layers participate in each refinement step (no layer reduction)
 
-## Repository Contents
+### Key Innovation
 
-### Documentation
+Unlike typical recursive models that reduce layers, this implementation maintains **full transformer depth** across all refinement steps. The recursion is an *outer* loop that reuses the entire 32-layer stack, with lightweight per-layer refine cells that make residual updates to hidden states.
 
-- **[KDA_ALGORITHM_DOCUMENTATION.md](./KDA_ALGORITHM_DOCUMENTATION.md)**: Comprehensive technical documentation of the KDA algorithm, including:
-  - Mathematical formulation
-  - Algorithm details
-  - Implementation specifics
-  - Performance optimizations
-
-### Implementation
-
-The KDA implementation has been copied from the [Flash Linear Attention (FLA)](https://github.com/fla-org/flash-linear-attention) repository:
-
-- `fla/ops/kda/`: Core KDA kernels
-  - `chunk.py`: Chunkwise computation for training
-  - `fused_recurrent.py`: Recurrent computation for inference
-  - `naive.py`: Reference implementations
-  - `gate.py`: Fine-grained gating mechanism
-  - `chunk_intra.py`: Intra-chunk attention computation
-  - `chunk_inter.py`: Inter-chunk computation
-  - `wy_fast.py`: WY representation utilities
-
-- `fla/layers/kda.py`: High-level KDA layer implementation
-
-- `fla/models/kda/`: Complete model implementations
-
-## Key Algorithm Details
-
-### Core Innovation: Fine-Grained Gating
-
-KDA introduces **fine-grained gating** where each attention head and key dimension has independent forget gates:
+## Architecture
 
 ```
-g[t] = -exp(A_log) ⊙ softplus(f_proj(hidden_states) + dt_bias)
+[Prefix Tokens] → [Chunk Draft (W tokens)] 
+                    ↓
+            Inner Loop (K steps):
+                - Full Transformer Forward
+                - Per-Layer Refine Cells (latent edits)
+                - Boundary Head (halt/commit decision)
+                - Token Updates (masked positions only)
+                    ↓
+            [Commit B' ≤ W tokens] → [Next Chunk]
 ```
 
-This is a key improvement over Gated DeltaNet which applies gating uniformly per head.
+**Components:**
 
-### State Update Rule
+- **RefineCell**: Tiny per-layer MLP that refines hidden states via residual connections
+- **BoundaryHead**: Predicts commit probability and effective chunk length
+- **LatentToken**: Optional learned `[Z]` token for global control signal
+- **ChunkRefineWrapper**: Main wrapper that orchestrates chunked generation
 
-The recurrent state update follows the delta rule:
+## Installation
 
+```bash
+# Clone repository
+git clone <repo-url>
+cd recursive-kimi-linear
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Or using uv
+uv pip install -r requirements.txt
 ```
-S[t] = S[t-1] ⊙ exp(g[t]) + β[t] · k[t] ⊗ (v[t] - k[t]^T · S[t-1])
-```
 
-Where:
-- `S[t]`: State matrix `[H, K, V]`
-- `g[t]`: Fine-grained forget gate `[H, K]`
-- `β[t]`: Beta update gate `[H]`
-- `k[t]`, `v[t]`: Key and value vectors
+**Requirements:**
+- Python >= 3.10
+- PyTorch >= 2.5
+- transformers >= 4.45.0
+- flash-linear-attention >= 0.4.0 (includes KDA kernels)
+- accelerate >= 0.30.0
 
-### Chunkwise Algorithm
+## Usage
 
-For efficient parallel computation, sequences are processed in chunks of 64 tokens:
-
-1. **Intra-chunk**: Compute attention matrices Aqk and Akk within chunks
-2. **Inter-chunk**: Maintain recurrent state between chunks
-3. **WY representation**: Efficient matrix decomposition for computation
-
-## Model Specifications
-
-- **Total Parameters**: 48B
-- **Activated Parameters**: 3B (sparse MoE activation)
-- **Context Length**: Up to 1M tokens
-- **Architecture**: Hybrid KDA + MLA (3:1 ratio)
-
-## Performance
-
-Kimi Linear achieves:
-
-- **MMLU-Pro (4k context)**: 51.0 performance with similar speed as full attention
-- **RULER (128k context)**: 84.3 performance, 3.98× speedup
-- **Long sequences (1M tokens)**: 6.3× faster TPOT compared to MLA
-- **KV Cache**: Up to 75% reduction
-
-## Quick Setup
-
-### On GCP
-
-**Instance Created**: `kimi-linear-cpu` (4 vCPUs, 16GB RAM) - IP: 34.134.110.233
-
-1. **SSH into instance**: 
-   ```bash
-   ssh kimi-gcp
-   # or
-   ssh kimi-linear-cpu.us-central1-a.jacobfv123-main-project
-   ```
-2. **Follow Setup Guide**: See [SETUP_GCP.md](./SETUP_GCP.md) for complete setup instructions including:
-   - Cloning this repository
-   - Downloading Hugging Face weights
-   - Converting weights to custom implementation
-
-**Note**: This is a CPU-only instance, suitable for model loading, weight conversion, and testing. For GPU training/inference, see [GCP_INSTANCE_SETUP.md](./GCP_INSTANCE_SETUP.md) for GPU instance creation.
-
-## Resources
-
-### Papers
-
-- **Primary Paper**: [Kimi Linear: An Expressive, Efficient Attention Architecture](https://arxiv.org/abs/2510.26692)
-  - arXiv ID: 2510.26692
-  - Year: 2025
-
-### Code Repositories
-
-- **Official GitHub**: https://github.com/MoonshotAI/Kimi-Linear
-- **FLA Implementation**: https://github.com/fla-org/flash-linear-attention/tree/main/fla/ops/kda
-- **Hugging Face Model**: https://huggingface.co/moonshotai/Kimi-Linear-48B-A3B-Instruct
-
-### Usage
-
-The KDA implementation can be used via the FLA library:
+### Inference (Chunked Generation)
 
 ```python
-from fla.ops.kda import chunk_kda, fused_recurrent_kda
-from fla.layers.kda import KimiDeltaAttention
+from transformers import AutoModelForCausalLM
+from kimi_linear.recursive import ChunkRefineWrapper
 
-# For training (chunk mode)
-attention = KimiDeltaAttention(
-    hidden_size=2048,
-    num_heads=16,
-    head_dim=128,
-    mode='chunk'
+# Load base model
+base_model = AutoModelForCausalLM.from_pretrained(
+    "moonshotai/Kimi-Linear-48B-A3B-Instruct",
+    torch_dtype=torch.bfloat16,
+    trust_remote_code=True,
+    device_map="auto",
+)
+
+# Wrap with recursive controller
+wrapper = ChunkRefineWrapper(
+    base_model=base_model,
+    layers_to_refine="all",
+    use_latent_token=True,
+    max_chunk_len=128,
+)
+
+# Generate with recursive refinement
+input_ids = tokenizer("Your prompt here", return_tensors="pt")["input_ids"]
+output = wrapper.generate_chunks(
+    input_ids=input_ids,
+    max_new_tokens=512,
+    chunk_width=128,
+    max_inner_steps=4,
+    commit_threshold=0.7,
 )
 ```
 
-See [KDA_ALGORITHM_DOCUMENTATION.md](./KDA_ALGORITHM_DOCUMENTATION.md) for detailed usage examples.
+### Training
 
-## Citation
-
-If you use this implementation, please cite:
-
-```bibtex
-@misc{team2025kimi,
-    title={Kimi Linear: An Expressive, Efficient Attention Architecture},
-    author={Zhang, Yu and Lin, Zongyu and Yao, Xingcheng and others},
-    year={2025},
-    eprint={2510.26692},
-    archivePrefix={arXiv},
-    primaryClass={cs.CL}
-}
+```bash
+# Phase A: Train sidecar only (refine cells + boundary head)
+python train_recursive.py \
+    --model_name moonshotai/Kimi-Linear-48B-A3B-Instruct \
+    --chunk_width 128 \
+    --max_inner_steps 4 \
+    --batch_size 8 \
+    --num_steps 50000 \
+    --phase a \
+    --trust_remote_code
 ```
+
+**Training Phases:**
+
+- **Phase A**: Freeze base model, train only sidecar components (50-100k steps)
+- **Phase B**: Light LoRA unfreeze on attention/MLP, scheduled sampling on boundaries
+- **Phase C**: End-to-end polish with subset of layers unfrozen
+
+## Implementation Details
+
+### Refine Cell
+
+Per-layer tiny MLP that takes hidden states `h` and persistent state `s`, returns:
+- `h_refined = h + Δh` (residual update)
+- `s_next` (updated persistent state)
+
+Output projection is **zero-initialized** to preserve baseline behavior at step 0.
+
+### Boundary Head
+
+Two-head classifier from top-layer pooled hidden states:
+- **Commit Head**: Sigmoid → `p(commit)` probability
+- **Length Head**: Categorical → effective chunk length (0..W)
+
+### Inner Refinement Loop
+
+```python
+for t in range(K):  # K refinement steps
+    # Full transformer forward
+    logits, hiddens, cache = model.forward(chunk, cache)
+    
+    # Boundary decision
+    p_commit, p_len = boundary_head(hiddens[-1])
+    if p_commit > threshold: break
+    
+    # Refine hidden states
+    for layer, refine_cell in zip(layers, refine_cells):
+        hiddens[layer] = refine_cell(hiddens[layer], states[layer])
+    
+    # Update tokens (masked positions only)
+    chunk = update_tokens(chunk, logits, mask)
+```
+
+### KDA State Persistence
+
+Leverages Kimi-Linear's **KDA recurrent states** which are efficiently maintained across inner steps:
+- KDA layers: Keep recurrent state `S` across refinement steps (cheap)
+- MLA layers: Recompute KV cache for current chunk (sparse, 3:1 ratio)
+
+This enables multiple refinement passes without ballooning memory.
+
+## Loss Functions
+
+Training uses multiple loss components:
+
+- **Final CE**: Cross-entropy on committed tokens
+- **Masked CE**: Deep supervision on intermediate steps (editable positions only)
+- **Halt Loss**: Binary cross-entropy for boundary prediction
+- **Length Loss**: Cross-entropy for effective length prediction
+- **Ponder Loss**: Encourage fewer refinement steps (ACT-style)
+- **Stability Loss**: Temporal consistency to prevent flip-flopping
+
+## Performance Considerations
+
+- **Memory**: KDA state persistence keeps memory overhead low (~2-4× inner steps)
+- **Latency**: K refinement steps add latency but improve quality
+- **Throughput**: Chunked generation can parallelize across batches
+
+**Baseline (Kimi-Linear):**
+- Up to 75% KV cache reduction
+- Up to 6× faster decoding at 1M tokens
+- 1M token context length
+
+**With Recursion:**
+- Additional cost: K × (chunk forward pass + refine overhead)
+- Benefit: Iterative refinement improves coherence and reasoning
+
+## Evaluation
+
+Proposed evaluation metrics:
+
+1. **Stability@K**: Fraction of blocks with consistent tokens across inner steps
+2. **Length MSE**: |B' - B*_teacher| error
+3. **TPOT Uplift**: Time per output token vs baseline
+4. **Reasoning Lift**: GSM8K / MATH / ARC-AGI accuracy improvements
+5. **Length Generalization**: Train on W=128, eval on W=256/384
+
+## References
+
+- **Kimi-Linear**: [GitHub](https://github.com/MoonshotAI/Kimi-Linear) | [HF Model](https://huggingface.co/moonshotai/Kimi-Linear-48B-A3B-Instruct) | [Paper](https://arxiv.org/abs/2510.26692)
+- **FLA KDA**: [GitHub](https://github.com/fla-org/flash-linear-attention/tree/main/fla/ops/kda)
+- **TRM**: [GitHub](https://github.com/SamsungSAILMontreal/TinyRecursiveModels) | [Paper](https://arxiv.org/abs/2510.04871)
 
 ## License
 
-The KDA implementation code is copied from the FLA repository, which is subject to its own license terms. Please refer to the original repository for licensing information.
+This implementation builds on:
+- Kimi-Linear (subject to its license)
+- Flash Linear Attention (subject to its license)
+- TRM (subject to its license)
 
+Please refer to the original repositories for licensing information.
