@@ -246,8 +246,17 @@ class ExperimentTracker:
     def save_metrics(self, metrics: Dict[str, float], step: int):
         """Save metrics to JSON file."""
         metrics_file = self.metrics_dir / f"step_{step:06d}.json"
+        # Ensure all values are JSON-serializable (convert numpy/torch types)
+        cleaned_metrics = {}
+        for k, v in metrics.items():
+            if isinstance(v, (int, float)):
+                cleaned_metrics[k] = float(v)
+            elif hasattr(v, 'item'):  # torch.Tensor
+                cleaned_metrics[k] = float(v.item())
+            else:
+                cleaned_metrics[k] = v
         with open(metrics_file, 'w') as f:
-            json.dump({"step": step, **metrics}, f, indent=2)
+            json.dump({"step": int(step), **cleaned_metrics}, f, indent=2)
     
     def save_metadata(self):
         """Save experiment metadata."""

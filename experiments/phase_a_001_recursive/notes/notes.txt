@@ -19,3 +19,8 @@
 2025-11-03T08:42:43.634736: Phase: a
 2025-11-03T08:42:43.634942: Config: configs/recursive_phase_a.json
 2025-11-03T08:42:43.635156: Steps: 200, Batch: 4, LR: 0.0003
+2025-11-03T08:43:35.480001: Model loaded: ./models/kimi-linear-48b
+2025-11-03T08:43:35.486451: Training loop started
+2025-11-03T08:43:35.707257: Training recursive components (refine_cells, boundary, latent_token)
+2025-11-03T08:43:35.707711: Base model frozen and in eval mode (MoE gate requirement)
+2025-11-03T08:43:35.739464: Training started

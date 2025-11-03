@@ -79,6 +79,7 @@ def train_with_tracking(
     eval_interval: int = 1000,
     save_interval: int = 5000,
     eval_data: Optional[list] = None,
+    initial_lr: float = 3e-4,  # For baseline logging
 ):
     """
     Training loop with comprehensive tracking.
@@ -166,22 +167,38 @@ def train_with_tracking(
             logits = logits[:, :-1, :].contiguous()
             loss = loss_fn(logits.view(-1, logits.size(-1)), targets.view(-1))
             
+            # Get current LR (will update after training step if applicable)
+            current_lr = 0.0
+            
             # Backward (only if we have trainable params)
             if isinstance(model, ChunkRefineWrapper) and model.config.recursive_enabled:
                 accelerator.backward(loss)
                 optimizer.step()
-                scheduler.step()
+                scheduler.step()  # Must call step() before get_last_lr() returns correct value
                 optimizer.zero_grad()
+                
+                # Get LR after scheduler step (this is the correct way)
+                if scheduler is not None:
+                    try:
+                        lr_list = scheduler.get_last_lr()
+                        if lr_list and len(lr_list) > 0:
+                            current_lr = float(lr_list[0])
+                    except (AttributeError, IndexError, RuntimeError) as e:
+                        # Fallback: get LR from optimizer param_groups
+                        if optimizer is not None and optimizer.param_groups:
+                            current_lr = float(optimizer.param_groups[0].get('lr', initial_lr))
             else:
-                # Baseline mode - just forward pass, no backward
-                pass
+                # Baseline mode - just forward pass, no backward, no scheduler.step()
+                # For baseline, show initial LR for reference (even though not training)
+                current_lr = float(initial_lr)  # Show what LR would be if training
             
             # Logging
             if step % log_interval == 0:
-                current_lr = scheduler.get_last_lr()[0] if scheduler else 0.0
+                # Ensure proper float conversion for JSON serialization
                 metrics = {
-                    "loss": loss.item(),
-                    "learning_rate": current_lr,
+                    "step": int(step),
+                    "loss": float(loss.item()),
+                    "learning_rate": float(current_lr),
                 }
                 
                 metrics_tracker.log_scalar("train/loss", loss.item(), step)
@@ -415,6 +432,7 @@ def main():
             args.eval_interval,
             args.save_interval,
             eval_data,
+            initial_lr=args.lr,
         )
     except Exception as e:
         tracker.add_issue(f"Training failed: {e}")
