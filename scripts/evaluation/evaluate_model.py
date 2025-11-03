@@ -8,8 +8,9 @@ import sys
 import json
 from typing import Optional
 
-# Add repo root to path (three levels up from scripts/evaluation/)
+# Add repo root and src to path (three levels up from scripts/evaluation/)
 repo_root = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(repo_root / "src"))
 sys.path.insert(0, str(repo_root))
 
 from transformers import AutoModelForCausalLM, AutoTokenizer

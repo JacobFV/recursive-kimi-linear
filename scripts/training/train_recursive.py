@@ -7,7 +7,13 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, get_linear_schedul
 from accelerate import Accelerator
 from pathlib import Path
 import argparse
+import sys
 from typing import Optional
+
+# Add repo root and src to path
+repo_root = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(repo_root / "src"))
+sys.path.insert(0, str(repo_root))
 
 from kimi_linear.recursive import (
     ChunkRefineWrapper,

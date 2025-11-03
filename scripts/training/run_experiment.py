@@ -18,6 +18,11 @@ from datetime import datetime
 import sys
 from typing import Optional
 
+# Add repo root and src to path
+repo_root = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(repo_root / "src"))
+sys.path.insert(0, str(repo_root))
+
 from transformers import AutoModelForCausalLM, AutoTokenizer, get_linear_schedule_with_warmup
 from accelerate import Accelerator
 from torch.utils.data import DataLoader

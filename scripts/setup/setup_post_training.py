@@ -83,7 +83,7 @@ def create_data_loader():
     """Create a data loader script that integrates with our training."""
     # Get repo root (two levels up from scripts/setup/)
     repo_root = Path(__file__).parent.parent.parent
-    loader_path = repo_root / "kimi_linear" / "recursive" / "post_training_data.py"
+    loader_path = repo_root / "src" / "kimi_linear" / "recursive" / "post_training_data.py"
     
     if loader_path.exists():
         print(f"✓ {loader_path} already exists")
