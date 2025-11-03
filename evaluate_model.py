@@ -13,43 +13,53 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from kimi_linear.recursive.metrics import MetricsTracker, evaluate_model, ReasoningEvaluator
-from kimi_linear.recursive import ChunkRefineWrapper
+from kimi_linear.recursive import load_model_with_config, RecursiveConfig
 
 
 def load_model(
     model_path: str,
     use_recursive: bool = False,
+    recursive_config: Optional[RecursiveConfig] = None,
+    config_path: Optional[str] = None,
     device_map: str = "auto",
     torch_dtype=torch.bfloat16,
 ):
-    """Load model (regular or with recursive wrapper)."""
+    """
+    Load model (regular or with recursive wrapper).
+    
+    Supports both legacy (use_recursive) and new config-based approach.
+    """
     print(f"Loading model from {model_path}...")
     
-    tokenizer = AutoTokenizer.from_pretrained(
-        model_path,
-        trust_remote_code=True,
-    )
-    if tokenizer.pad_token is None:
-        tokenizer.pad_token = tokenizer.eos_token
+    # Use new config-based loader if config provided
+    if recursive_config is not None or config_path is not None:
+        model, tokenizer, config = load_model_with_config(
+            model_path,
+            config=recursive_config,
+            config_path=config_path,
+            recursive_enabled=use_recursive if recursive_config is None and config_path is None else None,
+            device_map=device_map,
+            torch_dtype=torch_dtype,
+            trust_remote_code=True,
+        )
+        print(f"  Recursive enabled: {config.recursive_enabled}")
+        return model, tokenizer
     
-    base_model = AutoModelForCausalLM.from_pretrained(
+    # Legacy mode: use_recursive flag
+    if use_recursive:
+        # Create default enabled config
+        config = RecursiveConfig(recursive_enabled=True)
+    else:
+        config = RecursiveConfig(recursive_enabled=False)
+    
+    model, tokenizer, _ = load_model_with_config(
         model_path,
+        config=config,
+        device_map=device_map,
         torch_dtype=torch_dtype,
         trust_remote_code=True,
-        device_map=device_map,
     )
-    
-    if use_recursive:
-        print("Wrapping with ChunkRefineWrapper...")
-        model = ChunkRefineWrapper(
-            base_model=base_model,
-            layers_to_refine="all",
-            use_latent_token=True,
-            max_chunk_len=128,
-        )
-    else:
-        model = base_model
-    
+    print(f"  Recursive enabled: {config.recursive_enabled}")
     return model, tokenizer
 
 
@@ -187,7 +197,9 @@ def main():
                        choices=["baseline", "after_surgery", "finetuned_vanilla", "finetuned_recursive"],
                        help="Evaluation stage")
     parser.add_argument("--use_recursive", action="store_true",
-                       help="Use recursive wrapper")
+                       help="Use recursive wrapper (legacy, use --recursive-config instead)")
+    parser.add_argument("--recursive-config", type=str, default=None,
+                       help="Path to RecursiveConfig JSON file")
     parser.add_argument("--output_dir", type=str, default="./eval_results",
                        help="Output directory for results")
     parser.add_argument("--skip_perplexity", action="store_true",
@@ -203,11 +215,27 @@ def main():
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     
+    # Auto-select config based on stage if not provided
+    config_path = args.recursive_config
+    if config_path is None:
+        # Map stage to default config file
+        stage_config_map = {
+            "baseline": "configs/baseline.json",
+            "after_surgery": "configs/after_surgery.json",
+            "finetuned_vanilla": "configs/baseline.json",
+            "finetuned_recursive": "configs/recursive_phase_a.json",
+        }
+        default_config = stage_config_map.get(args.stage)
+        if default_config and Path(default_config).exists():
+            config_path = default_config
+            print(f"Auto-selected config: {config_path}")
+    
     print("=" * 60)
     print(f"Model Evaluation: {args.stage}")
     print("=" * 60)
     print(f"Model path: {args.model_path}")
-    print(f"Use recursive: {args.use_recursive}")
+    print(f"Config path: {config_path or 'None (using defaults)'}")
+    print(f"Use recursive (legacy): {args.use_recursive}")
     print()
     
     # Load model
@@ -215,6 +243,7 @@ def main():
         model, tokenizer = load_model(
             args.model_path,
             use_recursive=args.use_recursive,
+            config_path=config_path,
         )
         print("✓ Model loaded successfully")
     except Exception as e:
@@ -236,6 +265,7 @@ def main():
         "stage": args.stage,
         "model_path": args.model_path,
         "use_recursive": args.use_recursive,
+        "config_path": config_path,
     }
     
     # Perplexity (if we have data)

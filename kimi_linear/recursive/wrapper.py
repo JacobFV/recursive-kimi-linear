@@ -2,10 +2,11 @@
 
 import torch
 import torch.nn as nn
-from typing import Optional, Dict, Any, Tuple, List
+from typing import Optional, Dict, Any, Tuple, List, Union
 from .refine_cell import RefineCell
 from .boundary_head import BoundaryHead
 from .latent_token import LatentToken
+from .config import RecursiveConfig
 
 
 class ChunkRefineWrapper(nn.Module):
@@ -14,67 +15,100 @@ class ChunkRefineWrapper(nn.Module):
     
     Generates text in fixed-width chunks, applying K inner refinement steps
     before committing tokens. Uses persistent state across inner steps.
+    
+    Idempotent: When recursive_enabled=False, behaves identically to base model.
     """
     
     def __init__(
         self,
         base_model,
-        layers_to_refine: str = "all",
-        use_latent_token: bool = True,
-        d_state: int = 512,
-        gate_hidden: int = 1024,
-        max_chunk_len: int = 128,
+        config: Optional[RecursiveConfig] = None,
+        # Legacy parameters (for backward compatibility)
+        layers_to_refine: Optional[Union[str, List[int]]] = None,
+        use_latent_token: Optional[bool] = None,
+        d_state: Optional[int] = None,
+        gate_hidden: Optional[int] = None,
+        max_chunk_len: Optional[int] = None,
     ):
         """
         Args:
             base_model: Base transformer model (Kimi-Linear)
-            layers_to_refine: Which layers to apply refinement ("all" or list of indices)
-            use_latent_token: Whether to use explicit [Z] token
-            d_state: Dimension of persistent refine state
-            gate_hidden: Hidden dim for boundary head
-            max_chunk_len: Maximum chunk length for length prediction
+            config: RecursiveConfig object (preferred) or None to use defaults/legacy
+            layers_to_refine: (Legacy) Which layers to apply refinement
+            use_latent_token: (Legacy) Whether to use explicit [Z] token
+            d_state: (Legacy) Dimension of persistent refine state
+            gate_hidden: (Legacy) Hidden dim for boundary head
+            max_chunk_len: (Legacy) Maximum chunk length for length prediction
         """
         super().__init__()
         self.base = base_model
-        self.use_latent_token = use_latent_token
-        self.max_chunk_len = max_chunk_len
         
-        # Get model config
-        config = getattr(base_model, 'config', None)
-        if config is None:
+        # Resolve config: prefer config parameter, fall back to legacy params
+        if config is not None:
+            self.config = config
+            # Validate config
+            errors = config.validate()
+            if errors:
+                raise ValueError(f"Invalid RecursiveConfig: {errors}")
+        else:
+            # Legacy mode: create config from individual parameters
+            self.config = RecursiveConfig(
+                recursive_enabled=True,  # Legacy mode assumes enabled
+                layers_to_refine=layers_to_refine if layers_to_refine is not None else "all",
+                use_latent_token=use_latent_token if use_latent_token is not None else True,
+                d_state=d_state if d_state is not None else 512,
+                gate_hidden=gate_hidden if gate_hidden is not None else 1024,
+                max_chunk_len=max_chunk_len if max_chunk_len is not None else 128,
+            )
+        
+        # Get model config for dimensions
+        model_config = getattr(base_model, 'config', None)
+        if model_config is None:
             raise ValueError("Base model must have a config attribute")
         
-        self.hidden_size = getattr(config, 'hidden_size', getattr(config, 'd_model', None))
+        self.hidden_size = getattr(model_config, 'hidden_size', getattr(model_config, 'd_model', None))
         if self.hidden_size is None:
             raise ValueError("Could not determine hidden_size from config")
         
-        self.num_layers = getattr(config, 'num_hidden_layers', getattr(config, 'num_layers', None))
+        self.num_layers = getattr(model_config, 'num_hidden_layers', getattr(model_config, 'num_layers', None))
         if self.num_layers is None:
             raise ValueError("Could not determine num_layers from config")
         
-        # Determine which layers to refine
-        if layers_to_refine == "all":
-            self.layer_indices = list(range(self.num_layers))
-        else:
-            self.layer_indices = layers_to_refine
-        
-        # Create refine cells (one per layer, or shared)
-        self.refine_cells = nn.ModuleList([
-            RefineCell(self.hidden_size, d_state)
-            for _ in range(len(self.layer_indices))
-        ])
-        
-        # Boundary head
-        self.boundary = BoundaryHead(self.hidden_size, gate_hidden, max_chunk_len)
-        
-        # Latent token (optional)
-        if use_latent_token:
-            self.latent_token = LatentToken(
-                vocab_size=getattr(config, 'vocab_size', 32000),
-                hidden_size=self.hidden_size
+        # IDEMPOTENT: Only create components if recursion enabled
+        if self.config.recursive_enabled:
+            # Determine which layers to refine
+            if self.config.layers_to_refine == "all":
+                self.layer_indices = list(range(self.num_layers))
+            else:
+                self.layer_indices = self.config.layers_to_refine
+            
+            # Create refine cells (one per layer)
+            self.refine_cells = nn.ModuleList([
+                RefineCell(self.hidden_size, self.config.d_state)
+                for _ in range(len(self.layer_indices))
+            ])
+            
+            # Boundary head
+            self.boundary = BoundaryHead(
+                self.hidden_size,
+                self.config.gate_hidden,
+                self.config.max_chunk_len
             )
+            
+            # Latent token (optional)
+            if self.config.use_latent_token:
+                self.latent_token = LatentToken(
+                    vocab_size=getattr(model_config, 'vocab_size', 32000),
+                    hidden_size=self.hidden_size
+                )
+            else:
+                self.latent_token = None
         else:
+            # Pass-through mode: no components created
+            self.refine_cells = None
+            self.boundary = None
             self.latent_token = None
+            self.layer_indices = []
     
     def _forward_hidden(
         self,
@@ -251,10 +285,10 @@ class ChunkRefineWrapper(nn.Module):
         self,
         input_ids: torch.Tensor,
         max_new_tokens: int = 512,
-        chunk_width: int = 128,
-        max_inner_steps: int = 4,
-        commit_threshold: float = 0.7,
-        min_commit_threshold: float = 0.3,
+        chunk_width: Optional[int] = None,
+        max_inner_steps: Optional[int] = None,
+        commit_threshold: Optional[float] = None,
+        min_commit_threshold: Optional[float] = None,
         temperature: float = 0.0,
         top_p: float = 1.0,
         **gen_kwargs
@@ -265,10 +299,10 @@ class ChunkRefineWrapper(nn.Module):
         Args:
             input_ids: Initial prompt [B, S] or [S]
             max_new_tokens: Maximum new tokens to generate
-            chunk_width: Fixed chunk width W
-            max_inner_steps: Maximum inner refinement steps K
-            commit_threshold: Halt threshold tau
-            min_commit_threshold: Minimum threshold to avoid deadlocks
+            chunk_width: Fixed chunk width W (uses config if None)
+            max_inner_steps: Maximum inner refinement steps K (uses config if None)
+            commit_threshold: Halt threshold tau (uses config if None)
+            min_commit_threshold: Minimum threshold (uses config if None)
             temperature: Sampling temperature
             top_p: Nucleus sampling
             **gen_kwargs: Additional generation kwargs
@@ -276,6 +310,22 @@ class ChunkRefineWrapper(nn.Module):
         Returns:
             Generated token IDs [B, S+new_tokens]
         """
+        # IDEMPOTENT: Pass through to base model if recursion disabled
+        if not self.config.recursive_enabled:
+            return self.base.generate(
+                input_ids=input_ids,
+                max_new_tokens=max_new_tokens,
+                temperature=temperature if temperature > 0 else None,
+                top_p=top_p if top_p < 1.0 else None,
+                **gen_kwargs
+            )
+        
+        # Use config values if parameters not provided
+        chunk_width = chunk_width if chunk_width is not None else self.config.chunk_width
+        max_inner_steps = max_inner_steps if max_inner_steps is not None else self.config.max_inner_steps
+        commit_threshold = commit_threshold if commit_threshold is not None else self.config.commit_threshold
+        min_commit_threshold = min_commit_threshold if min_commit_threshold is not None else self.config.min_commit_threshold
+        
         # Normalize input
         if input_ids.dim() == 1:
             input_ids = input_ids.unsqueeze(0)
@@ -299,7 +349,7 @@ class ChunkRefineWrapper(nn.Module):
             
             # Initialize per-layer refine states
             states = [
-                torch.zeros(batch_size, 512, device=input_ids.device)
+                torch.zeros(batch_size, self.config.d_state, device=input_ids.device)
                 for _ in self.refine_cells
             ]
             
@@ -311,7 +361,7 @@ class ChunkRefineWrapper(nn.Module):
                 # Forward pass
                 logits, hiddens, cache, z_token = self._forward_hidden(
                     out_ids,
-                    chunk.unsqueeze(0),
+                    chunk.unsqueeze(0) if chunk.dim() == 1 else chunk,
                     past_key_values=cache,
                     latent_token=z_token,
                 )
