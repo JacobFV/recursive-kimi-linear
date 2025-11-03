@@ -92,12 +92,20 @@ Kimi Linear achieves:
 
 ### On GCP
 
-1. **Create GCP Instance**: See [GCP_INSTANCE_SETUP.md](./GCP_INSTANCE_SETUP.md) for manual instance creation instructions (GPU availability varies by zone)
-2. **SSH into instance**: `ssh kimi-gcp` (after updating SSH config per instructions)
-3. **Follow Setup Guide**: See [SETUP_GCP.md](./SETUP_GCP.md) for complete setup instructions including:
+**Instance Created**: `kimi-linear-cpu` (4 vCPUs, 16GB RAM) - IP: 34.134.110.233
+
+1. **SSH into instance**: 
+   ```bash
+   ssh kimi-gcp
+   # or
+   ssh kimi-linear-cpu.us-central1-a.jacobfv123-main-project
+   ```
+2. **Follow Setup Guide**: See [SETUP_GCP.md](./SETUP_GCP.md) for complete setup instructions including:
    - Cloning this repository
    - Downloading Hugging Face weights
    - Converting weights to custom implementation
+
+**Note**: This is a CPU-only instance, suitable for model loading, weight conversion, and testing. For GPU training/inference, see [GCP_INSTANCE_SETUP.md](./GCP_INSTANCE_SETUP.md) for GPU instance creation.
 
 ## Resources
 
