@@ -82,9 +82,12 @@ class ChunkRefineWrapper(nn.Module):
             else:
                 self.layer_indices = self.config.layers_to_refine
             
+            # Get model dtype for component initialization
+            model_dtype = next(base_model.parameters()).dtype
+            
             # Create refine cells (one per layer)
             self.refine_cells = nn.ModuleList([
-                RefineCell(self.hidden_size, self.config.d_state)
+                RefineCell(self.hidden_size, self.config.d_state).to(dtype=model_dtype)
                 for _ in range(len(self.layer_indices))
             ])
             
@@ -93,14 +96,14 @@ class ChunkRefineWrapper(nn.Module):
                 self.hidden_size,
                 self.config.gate_hidden,
                 self.config.max_chunk_len
-            )
+            ).to(dtype=model_dtype)
             
             # Latent token (optional)
             if self.config.use_latent_token:
                 self.latent_token = LatentToken(
                     vocab_size=getattr(model_config, 'vocab_size', 32000),
                     hidden_size=self.hidden_size
-                )
+                ).to(dtype=model_dtype)
             else:
                 self.latent_token = None
         else:
@@ -109,6 +112,16 @@ class ChunkRefineWrapper(nn.Module):
             self.boundary = None
             self.latent_token = None
             self.layer_indices = []
+    
+    def forward(self, *args, **kwargs):
+        """
+        Forward pass through wrapper.
+        
+        When recursion is disabled, passes through to base model.
+        When recursion is enabled, also passes through to base model for now
+        (recursive generation uses generate_chunks, not forward).
+        """
+        return self.base(*args, **kwargs)
     
     def _forward_hidden(
         self,
@@ -170,10 +183,10 @@ class ChunkRefineWrapper(nn.Module):
         
         # Extract latent token state if used
         z_token = None
-        if self.use_latent_token and latent_token is not None:
+        if self.config.use_latent_token and latent_token is not None:
             # Use last position's hidden as latent state
             z_token = hiddens[-1][:, -1:, :]  # [B, 1, D]
-        elif self.use_latent_token and self.latent_token is not None:
+        elif self.config.use_latent_token and self.latent_token is not None:
             # Initialize from learned embedding
             batch_size = chunk_ids.size(0)
             device = chunk_ids.device

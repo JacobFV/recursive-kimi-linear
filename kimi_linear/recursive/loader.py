@@ -27,7 +27,7 @@ def load_model_with_config(
         config: RecursiveConfig object (preferred)
         config_path: Path to RecursiveConfig JSON file
         recursive_enabled: Override enable flag (used if config/config_path not provided)
-        torch_dtype: Model dtype
+        torch_dtype: Model dtype (deprecated, use dtype in kwargs)
         device_map: Device placement strategy
         trust_remote_code: Whether to trust custom model code
         **kwargs: Additional model loading kwargs
@@ -43,10 +43,13 @@ def load_model_with_config(
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
     
+    # Handle dtype: prefer dtype from kwargs, fall back to torch_dtype parameter
+    if 'dtype' not in kwargs:
+        kwargs['dtype'] = torch_dtype
+    
     # Load base model
     base_model = AutoModelForCausalLM.from_pretrained(
         model_path,
-        torch_dtype=torch_dtype,
         trust_remote_code=trust_remote_code,
         device_map=device_map,
         **kwargs

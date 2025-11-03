@@ -1,0 +1,32 @@
+{
+  "stage": "baseline",
+  "model_path": "./models/kimi-linear-48b",
+  "use_recursive": false,
+  "config_path": "configs/baseline.json",
+  "perplexity": {
+    "perplexity": 91456.0,
+    "token_accuracy": 0.0015748031437397003
+  },
+  "generation": [
+    {
+      "prompt": "The capital of France is",
+      "generated": "The capital of France is Paris. The capital of Italy is Rome. The capital of Germany is Berlin. The capital of Spain is Madrid. The capital of the United Kingdom is London. The capital of Japan is Tokyo. The capital of China is Beijing. The capital of India is New Delhi. The capital of Brazil is Bras\u00edlia. The capital of Canada is Ottawa. The capital of Australia is Canberra. The capital of Russia is Moscow. The capital of South Africa is Pretoria. The capital of Egypt is Cairo. The capital of Nigeria is Abuja. The capital of Mexico is Mexico City. The capital of Argentina is Buenos Aires. The capital of South Korea",
+      "length": 128
+    },
+    {
+      "prompt": "What is 2 + 2?",
+      "generated": "What is 2 + 2?**  \n**Answer:** 4\n\n**What is 5 + 5?**  \n**Answer:** 10\n\n**What is 10 + 10?**  \n**Answer:** 20\n\n**What is 100 + 100?**  \n**Answer:** 200\n\n**What is 1 + 1?**  \n**Answer:** 2\n\n**What is 3 + 3?**  \n**Answer:** 6\n\n**What is 7 + 7?**  \n**Answer:** 14\n\n**What is 9 + 9?**  \n**Answer:** 18\n\n**",
+      "length": 128
+    },
+    {
+      "prompt": "Explain how neural networks work:",
+      "generated": "Explain how neural networks work: a step-by-step guide\n\nNeural networks are a fundamental concept in artificial intelligence and machine learning. They are designed to mimic the way the human brain processes information, enabling machines to learn from data and make decisions. Here's a step-by-step guide to understanding how neural networks work:\n\n---\n\n### **1. Input Layer**\n- **What it is**: The first layer of the network, which receives the raw data.\n- **Function**: This layer simply passes the input data to the next layer. Each neuron in this layer represents one feature of the input.\n\n---\n\n### **2. Hidden Layers**\n- **What they are**: One or more",
+      "length": 128
+    },
+    {
+      "prompt": "Write a Python function to reverse a string:",
+      "generated": "Write a Python function to reverse a string: \"Hello World\"\n\nThe user wants a Python function to reverse a string: \"Hello World\"\n\nI need to provide a Python function that takes a string and returns its reverse.\n\nI should write a simple function, maybe with a docstring, and demonstrate it with \"Hello World\".\n\nI can use slicing: `s[::-1]` is the most Pythonic way.\n\nAlternatively, I could use a loop or `reversed()`.\n\nI'll provide a clean, simple function.\n\n```python\ndef reverse_string(s):\n    \"\"\"Return the reverse of the input string.\"\"\"\n    return s[::-1]\n\n# Example usage\ntext = \"Hello",
+      "length": 128
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "stage": "after_surgery",
+  "model_path": "./models/kimi-linear-48b",
+  "use_recursive": false,
+  "config_path": "configs/after_surgery.json",
+  "perplexity": {
+    "perplexity": 87270.4,
+    "token_accuracy": 0.0007874015718698502
+  },
+  "generation": [
+    {
+      "prompt": "The capital of France is",
+      "generated": "ERROR: mat1 and mat2 must have the same dtype, but got Float and BFloat16",
+      "length": 0
+    },
+    {
+      "prompt": "What is 2 + 2?",
+      "generated": "ERROR: mat1 and mat2 must have the same dtype, but got Float and BFloat16",
+      "length": 0
+    },
+    {
+      "prompt": "Explain how neural networks work:",
+      "generated": "ERROR: mat1 and mat2 must have the same dtype, but got Float and BFloat16",
+      "length": 0
+    },
+    {
+      "prompt": "Write a Python function to reverse a string:",
+      "generated": "ERROR: mat1 and mat2 must have the same dtype, but got Float and BFloat16",
+      "length": 0
+    }
+  ]
+}
