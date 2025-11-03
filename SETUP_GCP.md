@@ -34,7 +34,10 @@ pip install torch torchvision torchaudio  # CPU version (no CUDA needed)
 pip install flash-linear-attention transformers huggingface-hub einops
 ```
 
-**Note**: Since this is a CPU-only instance, we're installing CPU versions of PyTorch. This is fine for model loading, weight conversion, and testing. For actual training/inference with GPU, you'll need a GPU instance.
+**Note for GPU instances (Lambda Cloud)**: 
+- Lambda instances have CUDA pre-installed
+- Install GPU PyTorch: `pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121`
+- The GH200 uses ARM architecture, so ensure you install the correct PyTorch build
 
 ## Step 3: Download Hugging Face Weights
 
